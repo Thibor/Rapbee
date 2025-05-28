@@ -16,7 +16,7 @@ BOOL stop_search;
    1 = normal output
    2 = xboard format output */
 
-void think()
+void SearchIterate()
 {
 	int i, j, x;
 
@@ -36,15 +36,20 @@ void think()
 	memset(history, 0, sizeof(history));
 	for (i = 1; i <= max_depth; ++i) {
 		follow_pv = TRUE;
-		x = search(-10000, 10000, i, 1);
+		x = SearchAlpha(-10000, 10000, i, 1);
 		if (stop_search == TRUE) {
 			break;
 		}
-		printf("info depth %d score cp %d nodes %d time %d pv",i,x,nodes, get_ms() - start_time);
-			for (j = 0; j < pv_length[0]; ++j)
-				printf(" %s", EmoToUmo(pv[0][j].b));
-			printf("\n");
-			fflush(stdout);
+		if (abs(x) < MAX_SCORE - MAX_DEPTH)
+			printf("info depth %d score cp %d nodes %d time %d pv", i, x, nodes, get_ms() - start_time);
+		else if (x >= MAX_SCORE - MAX_DEPTH)
+			printf("info depth %d score mate %d nodes %d time %d pv", i, (MAX_SCORE - x + 1) >> 1, nodes, get_ms() - start_time);
+		else
+			printf("info depth %d score mate %d nodes %d time %d pv", i, (-MAX_SCORE - x) >> 1, nodes, get_ms() - start_time);
+		for (j = 0; j < pv_length[0]; ++j)
+			printf(" %s", EmoToUmo(pv[0][j].b));
+		printf("\n");
+		fflush(stdout);
 		if (x > 9000 || x < -9000)
 			break;
 	}
@@ -55,22 +60,22 @@ void think()
 
 /* search() does just that, in negamax fashion */
 
-int search(int alpha, int beta, int depth, int null_move)
+int SearchAlpha(int alpha, int beta, int depth, int null_move)
 {
 	int i, j; //x;
 	BOOL c, f;
 	int nullmat;
-	int o_side;    
-	int o_xside;   
-	int o_ep;      
-	int o_fifty;   
-	int o_hash;    
-	int o_castle; 
+	int o_side;
+	int o_xside;
+	int o_ep;
+	int o_fifty;
+	int o_hash;
+	int o_castle;
 
 	/* we're as deep as we want to be; call quiesce() to get
 	   a reasonable score and return it. */
 	if (!depth)
-		return quiesce(alpha,beta);
+		return SearchQuiescence(alpha, beta);
 	++nodes;
 
 	/* do some housekeeping every 1024 nodes */
@@ -100,36 +105,36 @@ int search(int alpha, int beta, int depth, int null_move)
 	/* null move */
 	if (GONULL && !c && null_move && ply) {
 		nullmat = 0;
-		for (i=0; i<64; ++i) {
+		for (i = 0; i < 64; ++i) {
 			if (piece[i] != EMPTY && piece[i] != PAWN && color[i] == side) {
 				nullmat += piece_value[piece[i]];
 			}
 		}
-		if (depth > RDEPTH(nullmat)) { 
-			o_side    =   side;
-			o_xside   =  xside;
-			o_ep      =     ep;
-			o_fifty   =  fifty;
-			o_hash    =   hash;
-			o_castle  = castle;
-			ep        =     -1;
-			fifty     =      0;
-			side      =  xside;
-			xside     = o_side;
-			x = -search(-beta, -beta+1, depth - 1 - RDEPTH(nullmat), 0);
-			side    = o_side;
-			xside   = o_xside;
-			ep      = o_ep;
-			fifty   = o_fifty;
-			hash    = o_hash;
-			castle  = o_castle;
+		if (depth > RDEPTH(nullmat)) {
+			o_side = side;
+			o_xside = xside;
+			o_ep = ep;
+			o_fifty = fifty;
+			o_hash = hash;
+			o_castle = castle;
+			ep = -1;
+			fifty = 0;
+			side = xside;
+			xside = o_side;
+			x = -SearchAlpha(-beta, -beta + 1, depth - 1 - RDEPTH(nullmat), 0);
+			side = o_side;
+			xside = o_xside;
+			ep = o_ep;
+			fifty = o_fifty;
+			hash = o_hash;
+			castle = o_castle;
 			if (stop_search == TRUE) {
 				return 0;
 			}
 			if (x >= beta) {
 				return beta;
-			}						
-		} 
+			}
+		}
 	}
 
 	gen();
@@ -143,7 +148,7 @@ int search(int alpha, int beta, int depth, int null_move)
 		if (!makemove(gen_dat[i].m.b))
 			continue;
 		f = TRUE;
-		x = -search(-beta, -alpha, depth - 1, 1);
+		x = -SearchAlpha(-beta, -alpha, depth - 1, 1);
 		takeback();
 		if (stop_search == TRUE) {
 			return 0;
@@ -168,7 +173,7 @@ int search(int alpha, int beta, int depth, int null_move)
 	/* no legal moves? then we're in checkmate or stalemate */
 	if (!f) {
 		if (c)
-			return -10000 + ply;
+			return -MAX_SCORE + ply;
 		else
 			return 0;
 	}
@@ -187,7 +192,7 @@ int search(int alpha, int beta, int depth, int null_move)
    is to find a position where there isn't a lot going on
    so the static evaluation function will work. */
 
-int quiesce(int alpha,int beta)
+int SearchQuiescence(int alpha, int beta)
 {
 	int i, j, x;
 
@@ -221,7 +226,7 @@ int quiesce(int alpha,int beta)
 		sort(i);
 		if (!makemove(gen_dat[i].m.b))
 			continue;
-		x = -quiesce(-beta, -alpha);
+		x = -SearchQuiescence(-beta, -alpha);
 		takeback();
 		if (stop_search == TRUE) {
 			return 0;
@@ -270,7 +275,7 @@ void sort_pv()
 	int i;
 
 	follow_pv = FALSE;
-	for(i = first_move[ply]; i < first_move[ply + 1]; ++i)
+	for (i = first_move[ply]; i < first_move[ply + 1]; ++i)
 		if (gen_dat[i].m.u == pv[0][ply].u) {
 			follow_pv = TRUE;
 			gen_dat[i].score += 10000000;

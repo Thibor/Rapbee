@@ -6,9 +6,6 @@
 #include <sys/timeb.h>
 #include "main.h"
 
-#define MAX_DEPTH 100
-#define MAX_TIME 60000
-
 void PrintWelcome() {
 	printf("Rapbee\n");
 	fflush(stdout);
@@ -142,7 +139,7 @@ static void ParseGo(char* ptr){
 				max_time = 0;
 		}
 	}
-	think();
+	SearchIterate();
 }
 
 

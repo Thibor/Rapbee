@@ -48,6 +48,9 @@
 #define ROW(x)			(x >> 3)
 #define COL(x)			(x & 7)
 
+#define MAX_DEPTH 100
+#define MAX_SCORE 10000
+#define MAX_TIME 60000
 
 /* This is the basic description of a move. promote is what
    piece to promote the pawn to, if the move is a pawn
@@ -153,9 +156,9 @@ BOOL makemove(SMove m);
 void takeback();
 
 /* search.c */
-void think();
-int search(int alpha, int beta, int depth, int null_move);
-int quiesce(int alpha, int beta);
+void SearchIterate();
+int SearchAlpha(int alpha, int beta, int depth, int null_move);
+int SearchQuiescence(int alpha, int beta);
 int reps();
 void sort_pv();
 void sort(int from);
