@@ -1,7 +1,7 @@
 # Rapbee
 
 <div align="center" style="padding-top: 50px">
-<img src="/Resources/rapbee.png" />
+<img src="/Resources/Rapbee.png" />
     <br>
     <br>
     <b><i>Uci chess engine 1500 elo.</i></b>
