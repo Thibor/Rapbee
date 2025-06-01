@@ -10,12 +10,6 @@
 
 BOOL stop_search;
 
-/* think() calls search() iteratively. Search statistics
-   are printed depending on the value of output:
-   0 = no output
-   1 = normal output
-   2 = xboard format output */
-
 void SearchIterate()
 {
 	int i, j, x;
