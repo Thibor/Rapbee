@@ -51,6 +51,7 @@
 #define MAX_DEPTH 100
 #define MAX_SCORE 10000
 #define MAX_TIME 60000
+#define NAME "Rapbee"
 
 /* This is the basic description of a move. promote is what
    piece to promote the pawn to, if the move is a pawn

@@ -6,10 +6,10 @@
 #include <sys/timeb.h>
 #include "main.h"
 
-void PrintWelcome() {
-	printf("Rapbee\n");
-	fflush(stdout);
+static void PrintWelcome() {
+	printf("%s %s\n",NAME,__DATE__);
 }
+
 /* get_ms() returns the milliseconds elapsed since midnight,
    January 1, 1970. */
 int get_ms()
