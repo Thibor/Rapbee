@@ -272,25 +272,29 @@ char* EmoToUmo(SMove m)
 
 //prints the board
 void PrintBoard() {
-	int i;
-	printf("   a b c d e f g h\n");
-	printf("  ----------------\n");
-	printf("8|");
-	for (i = 0; i < 64; ++i) {
-		switch (color[i]) {
-		case EMPTY:
-			printf(" .");
-			break;
-		case LIGHT:
-			printf(" %c", piece_char[piece[i]]);
-			break;
-		case DARK:
-			printf(" %c", piece_char[piece[i]] + ('a' - 'A'));
-			break;
+	const char* s = "   +---+---+---+---+---+---+---+---+\n";
+	const char* t = "     A   B   C   D   E   F   G   H\n";
+	printf(t);
+	for (int r = 0; r < 8; r++) {
+		printf(s);
+		printf(" %d |", 8 - r);
+		for (int f = 0; f < 8; f++) {
+			int i = r * 8 + f;
+			switch (color[i]) {
+			case EMPTY:
+				printf("   |");
+				break;
+			case LIGHT:
+				printf(" %c |", piece_char[piece[i]]);
+				break;
+			case DARK:
+				printf(" %c |", piece_char[piece[i]] + ('a' - 'A'));
+				break;
+			}
 		}
-		if ((i + 1) % 8 == 0 && i != 63)
-			printf("\n%d|", 7 - ROW(i));
+		printf(" %d \n", 8 - r);
 	}
-	printf("\n");
+	printf(s);
+	printf(t);
 }
 

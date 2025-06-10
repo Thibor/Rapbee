@@ -296,7 +296,6 @@ void gen_caps()
    it uses the move's history heuristic value. Note that
    1,000,000 is added to a capture move's score, so it
    always gets ordered above a "normal" move. */
-
 void gen_push(int from, int to, int bits)
 {
 	gen_t *g;
@@ -349,7 +348,6 @@ void gen_promote(int from, int to, int bits)
 /* makemove() makes a move. If the move is illegal, it
    undoes whatever it did and returns FALSE. Otherwise, it
    returns TRUE. */
-
 BOOL makemove(SMove m)
 {
 	
