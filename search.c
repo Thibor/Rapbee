@@ -20,7 +20,7 @@ void SearchIterate()
 	   from think() when our time is up */
 
 	stop_search = FALSE;
-	start_time = get_ms();
+	start_time = GetTimeMs();
 	stop_time = start_time + max_time;
 
 	ply = 0;
@@ -35,11 +35,11 @@ void SearchIterate()
 			break;
 		}
 		if (abs(x) < MAX_SCORE - MAX_DEPTH)
-			printf("info depth %d score cp %d nodes %d time %d pv", i, x, nodes, get_ms() - start_time);
+			printf("info depth %d score cp %d nodes %d time %d pv", i, x, nodes, GetTimeMs() - start_time);
 		else if (x >= MAX_SCORE - MAX_DEPTH)
-			printf("info depth %d score mate %d nodes %d time %d pv", i, (MAX_SCORE - x + 1) >> 1, nodes, get_ms() - start_time);
+			printf("info depth %d score mate %d nodes %d time %d pv", i, (MAX_SCORE - x + 1) >> 1, nodes, GetTimeMs() - start_time);
 		else
-			printf("info depth %d score mate %d nodes %d time %d pv", i, (-MAX_SCORE - x) >> 1, nodes, get_ms() - start_time);
+			printf("info depth %d score mate %d nodes %d time %d pv", i, (-MAX_SCORE - x) >> 1, nodes, GetTimeMs() - start_time);
 		for (j = 0; j < pv_length[0]; ++j)
 			printf(" %s", EmoToUmo(pv[0][j].b));
 		printf("\n");
@@ -310,7 +310,7 @@ void checkup()
 {
 	/* is the engine's time up? if so, longjmp back to the
 	   beginning of think() */
-	if (get_ms() >= stop_time) {
+	if (GetTimeMs() >= stop_time) {
 		stop_search = TRUE;
 	}
 }

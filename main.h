@@ -181,7 +181,7 @@ void PrintFen();
 
 
 /* main.c */
-int get_ms();
+int GetTimeMs();
 int main();
 int ParseMove(char *s);
 char *EmoToUmo(SMove m);

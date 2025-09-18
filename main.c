@@ -3,22 +3,22 @@
 #include <string.h>
 #include <signal.h>
 #include <time.h>
-#include <sys/timeb.h>
+#include "windows.h"
 #include "main.h"
 
+int GetTimeMs() {
+#ifdef WIN32
+	return GetTickCount();
+#else
+	struct timeval t;
+	gettimeofday(&t, NULL);
+	return t.tv_sec * 1000 + t.tv_usec / 1000;
+#endif
+}
+
 static void PrintWelcome() {
-	printf("%s %s\n",NAME,__DATE__);
+	printf("%s %s\n", NAME, __DATE__);
 }
-
-/* get_ms() returns the milliseconds elapsed since midnight,
-   January 1, 1970. */
-int get_ms()
-{
-	struct timeb timebuffer;
-	ftime(&timebuffer);
-	return (timebuffer.time * 1000) + timebuffer.millitm;
-}
-
 
 static void ReadLine(char* str, int n)
 {
@@ -69,14 +69,14 @@ static void ParsePosition(char* ptr)
 			if (*token == '\0')
 				break;
 			m = ParseMove(token);
-			if (m <0 || !makemove(gen_dat[m].m.b))
-				printf("Illegal move (%s).\n",token);
+			if (m < 0 || !makemove(gen_dat[m].m.b))
+				printf("Illegal move (%s).\n", token);
 			ply = 0;
 			gen();
 		}
 }
 
-static void ParseGo(char* ptr){
+static void ParseGo(char* ptr) {
 	max_time = MAX_TIME;
 	max_depth = MAX_DEPTH;
 	char token[80], bestmove_str[6], ponder_str[6];
