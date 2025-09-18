@@ -8,7 +8,7 @@
 
 int GetTimeMs() {
 #ifdef WIN32
-	return GetTickCount();
+	return GetTickCount64();
 #else
 	struct timeval t;
 	gettimeofday(&t, NULL);
