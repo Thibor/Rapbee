@@ -1,14 +1,4 @@
-/*
- *	DATA.C
- *	Tom Kerrigan's Simple Chess Program (TSCP)
- *
- *	Copyright 1997 Tom Kerrigan
- */
-
-/* with fen and null move capabilities - N.Blais 3/5/05 */
-
 #include "main.h"
-
 
 /* the board representation */
 int color[64];  /* LIGHT, DARK, or EMPTY */
@@ -42,17 +32,6 @@ int history[64][64];
 /* we need an array of hist_t's so we can take back the
    moves we make */
 hist_t hist_dat[HIST_STACK];
-
-/* the engine will search for max_time milliseconds or until it finishes
-   searching max_depth ply. */
-int max_time;
-int max_depth;
-
-/* the time when the engine starts searching, and when it should stop */
-int start_time;
-int stop_time;
-
-int nodes;  /* the number of nodes we've searched */
 
 /* a "triangular" PV array; for a good explanation of why a triangular
    array is needed, see "How Computers Play Chess" by Levy and Newborn. */
@@ -153,35 +132,6 @@ int castle_mask[64] = {
 char piece_char[6] = {
 	'A', 'N', 'B', 'R', 'Q', 'K'
 };
-
-
-/* the initial board state */
-
-int init_color[64] = {
-	1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-int init_piece[64] = {
-	3, 1, 2, 4, 5, 2, 1, 3,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	3, 1, 2, 4, 5, 2, 1, 3
-};
-
-
-
-const char *spos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 
 const char *square_name[64] = {
 "a8","b8","c8","d8","e8","f8","g8","h8",

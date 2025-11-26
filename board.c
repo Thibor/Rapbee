@@ -1,19 +1,9 @@
-/*
- *	BOARD.C
- *	Tom Kerrigan's Simple Chess Program (TSCP)
- *
- *	Copyright 1997 Tom Kerrigan
- */
-
-/* with fen and null move capabilities - N.Blais 3/5/05 */
-
-#include <stdlib.h>
 #include "main.h"
 
 
 /* init_board() sets the board to the initial game state. */
 
-void init_board(const char *s)
+void InitBoard(const char *s)
 {
 	SetFen(s);
 	fifty = 0;
@@ -26,7 +16,7 @@ void init_board(const char *s)
 
 /* init_hash() initializes the random numbers used by set_hash(). */
 
-void init_hash()
+void InitHash()
 {
 	int i, j, k;
 
@@ -86,7 +76,6 @@ void set_hash()
 /* in_check() returns TRUE if side s is in check and FALSE
    otherwise. It just scans the board to find side s's king
    and calls attack() to see if it's being attacked. */
-
 BOOL in_check(int s)
 {
 	int i;

@@ -2,44 +2,30 @@
 #include <string.h>
 #include "main.h"
 
+#define S64 signed __int64
+#define U64 unsigned __int64
 #define GONULL 1
 
 #define RDEPTH(x)  ((x>1500)?(3):(2))
 
-//extern int piece_value[6];
-
-BOOL stop_search;
-
 void SearchIterate()
 {
 	int i, j, x;
-
-	//pv[0][0].u = -1;
-
-	/* some code that lets us longjmp back here and return
-	   from think() when our time is up */
-
-	stop_search = FALSE;
-	start_time = GetTimeMs();
-	stop_time = start_time + max_time;
-
 	ply = 0;
-	nodes = 0;
 
 	memset(pv, 0, sizeof(pv));
 	memset(history, 0, sizeof(history));
-	for (i = 1; i <= max_depth; ++i) {
+	for (i = 1; i <= info.depthLimit; ++i) {
 		follow_pv = TRUE;
 		x = SearchAlpha(-10000, 10000, i, 1);
-		if (stop_search == TRUE) {
+		if (info.stop)
 			break;
-		}
 		if (abs(x) < MAX_SCORE - MAX_DEPTH)
-			printf("info depth %d score cp %d nodes %d time %d pv", i, x, nodes, GetTimeMs() - start_time);
+			printf("info depth %d score cp %d nodes %d time %d pv", i, x, info.nodes, GetTimeMs() - info.timeStart);
 		else if (x >= MAX_SCORE - MAX_DEPTH)
-			printf("info depth %d score mate %d nodes %d time %d pv", i, (MAX_SCORE - x + 1) >> 1, nodes, GetTimeMs() - start_time);
+			printf("info depth %d score mate %d nodes %d time %d pv", i, (MAX_SCORE - x + 1) >> 1, info.nodes, GetTimeMs() - info.timeStart);
 		else
-			printf("info depth %d score mate %d nodes %d time %d pv", i, (-MAX_SCORE - x) >> 1, nodes, GetTimeMs() - start_time);
+			printf("info depth %d score mate %d nodes %d time %d pv", i, (-MAX_SCORE - x) >> 1, info.nodes, GetTimeMs() - info.timeStart);
 		for (j = 0; j < pv_length[0]; ++j)
 			printf(" %s", EmoToUmo(pv[0][j].b));
 		printf("\n");
@@ -50,9 +36,6 @@ void SearchIterate()
 	printf("bestmove %s\n", EmoToUmo(pv[0][0].b));
 	fflush(stdout);
 }
-
-
-/* search() does just that, in negamax fashion */
 
 int SearchAlpha(int alpha, int beta, int depth, int null_move)
 {
@@ -70,12 +53,12 @@ int SearchAlpha(int alpha, int beta, int depth, int null_move)
 	   a reasonable score and return it. */
 	if (!depth)
 		return SearchQuiescence(alpha, beta);
-	++nodes;
 
 	/* do some housekeeping every 1024 nodes */
-	if ((nodes & 1023) == 0)
+	if ((++info.nodes & 0xffff) == 0)
 		checkup();
-
+	if(info.stop)
+		return 0;
 	pv_length[ply] = ply;
 
 	/* if this isn't the root of the search tree (where we have
@@ -122,7 +105,7 @@ int SearchAlpha(int alpha, int beta, int depth, int null_move)
 			fifty = o_fifty;
 			hash = o_hash;
 			castle = o_castle;
-			if (stop_search == TRUE) {
+			if (info.stop) {
 				return 0;
 			}
 			if (x >= beta) {
@@ -144,9 +127,8 @@ int SearchAlpha(int alpha, int beta, int depth, int null_move)
 		f = TRUE;
 		x = -SearchAlpha(-beta, -alpha, depth - 1, 1);
 		takeback();
-		if (stop_search == TRUE) {
+		if (info.stop)
 			return 0;
-		}
 		if (x > alpha) {
 			/* this move caused a cutoff, so increase the history
 			   value so it gets ordered high next time we can
@@ -185,16 +167,14 @@ int SearchAlpha(int alpha, int beta, int depth, int null_move)
    function to cut the search off (and set alpha). The idea
    is to find a position where there isn't a lot going on
    so the static evaluation function will work. */
-
 int SearchQuiescence(int alpha, int beta)
 {
 	int i, j, x;
 
-	++nodes;
-
-	/* do some housekeeping every 1024 nodes */
-	if ((nodes & 1023) == 0)
+	if ((++info.nodes & 0xffff) == 0)
 		checkup();
+	if (info.stop)
+		return 0;
 
 	pv_length[ply] = ply;
 
@@ -222,9 +202,8 @@ int SearchQuiescence(int alpha, int beta)
 			continue;
 		x = -SearchQuiescence(-beta, -alpha);
 		takeback();
-		if (stop_search == TRUE) {
+		if (info.stop)
 			return 0;
-		}
 		if (x > alpha) {
 			if (x >= beta)
 				return beta;
@@ -244,7 +223,6 @@ int SearchQuiescence(int alpha, int beta)
 /* reps() returns the number of times the current position
    has been repeated. It compares the current value of hash
    to previous values. */
-
 int reps()
 {
 	int i;
@@ -263,7 +241,6 @@ int reps()
    it adds 10,000,000 to the move's score so it's played first
    by the search function. If not, follow_pv remains FALSE and
    search() stops calling sort_pv(). */
-
 void sort_pv()
 {
 	int i;
@@ -283,7 +260,6 @@ void sort_pv()
    swaps that move and the 'from' move so the move with the
    highest score gets searched next, and hopefully produces
    a cutoff. */
-
 void sort(int from)
 {
 	int i;
@@ -304,13 +280,8 @@ void sort(int from)
 }
 
 
-/* checkup() is called once in a while during the search. */
-
-void checkup()
-{
-	/* is the engine's time up? if so, longjmp back to the
-	   beginning of think() */
-	if (GetTimeMs() >= stop_time) {
-		stop_search = TRUE;
-	}
+//is called once in a while during the search.
+void checkup(){
+	if ((info.timeLimit && GetTimeMs() - info.timeStart > info.timeLimit) || (info.nodesLimit && info.nodes > info.nodesLimit))
+		info.stop = TRUE;
 }

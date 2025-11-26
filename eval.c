@@ -1,12 +1,3 @@
-/*
- *	EVAL.C
- *	Tom Kerrigan's Simple Chess Program (TSCP)
- *
- *	Copyright 1997 Tom Kerrigan
- */
-
-/* with fen and null move capabilities - N.Blais 3/5/05 */
-
 #include <string.h>
 #include "main.h"
 

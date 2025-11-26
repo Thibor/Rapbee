@@ -3,10 +3,12 @@
 #include <string.h>
 #include <signal.h>
 #include <time.h>
-#include "windows.h"
+#include <windows.h>
 #include "main.h"
 
-int GetTimeMs() {
+SearchInfo info;
+
+U64 GetTimeMs() {
 #ifdef WIN32
 	return GetTickCount64();
 #else
@@ -16,15 +18,9 @@ int GetTimeMs() {
 #endif
 }
 
-static void PrintWelcome() {
-	printf("%s %s\n", NAME, __DATE__);
-}
-
-static void ReadLine(char* str, int n)
-{
+static void ReadLine(char* str, int mc){
 	char* ptr;
-
-	if (fgets(str, n, stdin) == NULL)
+	if (fgets(str, mc, stdin) == NULL)
 		exit(0);
 	if ((ptr = strchr(str, '\n')) != NULL)
 		*ptr = '\0';
@@ -40,158 +36,102 @@ static char* ParseToken(char* string, char* token)
 	return string;
 }
 
-static void ParsePosition(char* ptr)
+void SetFen(const char* s)
 {
-	int m;
-	char token[80], fen[80];
+	int i;
+	int z;
+	int a = 0;
+	int sq = 0;
+	int n = (int)strlen(s);
 
-	ptr = ParseToken(ptr, token);
-	if (strcmp(token, "fen") == 0) {
-		fen[0] = '\0';
-		for (;;) {
-			ptr = ParseToken(ptr, token);
-			if (*token == '\0' || strcmp(token, "moves") == 0)
-				break;
-			strcat(fen, token);
-			strcat(fen, " ");
-		}
-		init_board(fen);
+	for (i = 0; i < 64; ++i) {
+		color[i] = EMPTY;
+		piece[i] = EMPTY;
 	}
-	else {
-		ptr = ParseToken(ptr, token);
-		init_board(spos);
-	}
-	ply = 0;
-	gen();
-	if (strcmp(token, "moves") == 0)
-		for (;;) {
-			ptr = ParseToken(ptr, token);
-			if (*token == '\0')
-				break;
-			m = ParseMove(token);
-			if (m < 0 || !makemove(gen_dat[m].m.b))
-				printf("Illegal move (%s).\n", token);
-			ply = 0;
-			gen();
-		}
-}
 
-static void ParseGo(char* ptr) {
-	max_time = MAX_TIME;
-	max_depth = MAX_DEPTH;
-	char token[80], bestmove_str[6], ponder_str[6];
-	int wtime, btime, winc, binc, movestogo, time, inc, pv[MAX_PLY];
-	int movetime, movedepth;
-	wtime = -1;
-	btime = -1;
-	winc = 0;
-	binc = 0;
-	movestogo = 40;
-	movetime = 0;
-	movedepth = 0;
-	for (;;) {
-		ptr = ParseToken(ptr, token);
-		if (*token == '\0')
-			break;
-		else if (strcmp(token, "wtime") == 0) {
-			ptr = ParseToken(ptr, token);
-			wtime = atoi(token);
+	for (i = 0, z = 0; i < n && z == 0; ++i) {
+		switch (s[i]) {
+		case '1': sq += 1; break;
+		case '2': sq += 2; break;
+		case '3': sq += 3; break;
+		case '4': sq += 4; break;
+		case '5': sq += 5; break;
+		case '6': sq += 6; break;
+		case '7': sq += 7; break;
+		case '8': sq += 8; break;
+		case 'p': color[sq] = DARK; piece[sq] = PAWN;   ++sq; break;
+		case 'n': color[sq] = DARK; piece[sq] = KNIGHT; ++sq; break;
+		case 'b': color[sq] = DARK; piece[sq] = BISHOP; ++sq; break;
+		case 'r': color[sq] = DARK; piece[sq] = ROOK;   ++sq; break;
+		case 'q': color[sq] = DARK; piece[sq] = QUEEN;  ++sq; break;
+		case 'k': color[sq] = DARK; piece[sq] = KING;   ++sq; break;
+		case 'P': color[sq] = LIGHT; piece[sq] = PAWN;   ++sq; break;
+		case 'N': color[sq] = LIGHT; piece[sq] = KNIGHT; ++sq; break;
+		case 'B': color[sq] = LIGHT; piece[sq] = BISHOP; ++sq; break;
+		case 'R': color[sq] = LIGHT; piece[sq] = ROOK;   ++sq; break;
+		case 'Q': color[sq] = LIGHT; piece[sq] = QUEEN;  ++sq; break;
+		case 'K': color[sq] = LIGHT; piece[sq] = KING;   ++sq; break;
+		case '/': break;
+		default: z = 1; break;
 		}
-		else if (strcmp(token, "btime") == 0) {
-			ptr = ParseToken(ptr, token);
-			btime = atoi(token);
-		}
-		else if (strcmp(token, "winc") == 0) {
-			ptr = ParseToken(ptr, token);
-			winc = atoi(token);
-		}
-		else if (strcmp(token, "binc") == 0) {
-			ptr = ParseToken(ptr, token);
-			binc = atoi(token);
-		}
-		else if (strcmp(token, "movestogo") == 0) {
-			ptr = ParseToken(ptr, token);
-			movestogo = atoi(token);
-		}
-		else if (strcmp(token, "movetime") == 0) {
-			ptr = ParseToken(ptr, token);
-			movetime = atoi(token);
-		}
-		else if (strcmp(token, "depth") == 0) {
-			ptr = ParseToken(ptr, token);
-			movedepth = atoi(token);
-		}
+		a = i;
 	}
-	if (movedepth > 0)
-		max_depth = movedepth;
-	if (movetime > 0)
-		max_time = movetime;
-	else {
-		time = side == LIGHT ? wtime : btime;
-		inc = side == LIGHT ? winc : binc;
-		if (time >= 0) {
-			if (movestogo == 1) time -= min(1000, time / 10);
-			max_time = (time + inc * (movestogo - 1)) / movestogo;
-			if (max_time > time)
-				max_time = time;
-			max_time -= 10;
-			if (max_time < 0)
-				max_time = 0;
+
+	side = -1;
+	xside = -1;
+
+	++a;
+
+	for (i = a, z = 0; i < n && z == 0; ++i) {
+		switch (s[i]) {
+		case 'w': side = LIGHT; xside = DARK; break;
+		case 'b': side = DARK; xside = LIGHT; break;
+		default: z = 1; break;
 		}
+		a = i;
 	}
-	SearchIterate();
-}
 
+	castle = 0;
 
-static void UciLoop() {
-	char command[4096], token[80], * ptr;
-	for (;;) {
-		ReadLine(command, sizeof(command));
-		ptr = ParseToken(command, token);
-		if (strcmp(token, "uci") == 0) {
-			printf("id name Rapbee\n");
-			printf("uciok\n");
-			fflush(stdout);
+	for (i = a + 1, z = 0; i < n && z == 0; ++i) {
+		switch (s[i]) {
+		case 'K': castle |= 1; break;
+		case 'Q': castle |= 2; break;
+		case 'k': castle |= 4; break;
+		case 'q': castle |= 8; break;
+		case '-': break;
+		default: z = 1; break;
 		}
-		else if (strcmp(token, "isready") == 0) {
-			printf("readyok\n");
-			fflush(stdout);
+		a = i;
+	}
+
+	ep = -1;
+
+	for (i = a + 1, z = 0; i < n && z == 0; ++i) {
+		switch (s[i]) {
+		case '-': break;
+		case 'a': ep = 0; break;
+		case 'b': ep = 1; break;
+		case 'c': ep = 2; break;
+		case 'd': ep = 3; break;
+		case 'e': ep = 4; break;
+		case 'f': ep = 5; break;
+		case 'g': ep = 6; break;
+		case 'h': ep = 7; break;
+		case '1': ep += 56; break;
+		case '2': ep += 48; break;
+		case '3': ep += 40; break;
+		case '4': ep += 32; break;
+		case '5': ep += 24; break;
+		case '6': ep += 16; break;
+		case '7': ep += 8; break;
+		case '8': ep += 0; break;
+		default: z = 1; break;
 		}
-		else if (strcmp(token, "position") == 0) {
-			ParsePosition(ptr);
-		}
-		else if (strcmp(token, "go") == 0) {
-			ParseGo(ptr);
-		}
-		else if (strcmp(token, "quit") == 0) {
-			exit(0);
-		}
-		else if (strcmp(token, "print") == 0)
-			PrintBoard();
 	}
 }
 
-/* main() is basically an infinite loop that either calls
-   think() when it's the computer's turn to move or prompts
-   the user for a command (and deciphers it). */
-
-int main()
-{
-	PrintWelcome();
-	init_hash();
-	init_board(spos);
-	gen();
-	UciLoop();
-	return 0;
-}
-
-
-/* parse the move s (in coordinate notation) and return the move's
-   index in gen_dat, or -1 if the move is illegal */
-
-   /* parse the move s (in coordinate notation) and return the move's
-	  index in gen_dat, or -1 if the move is illegal or -2 if unknow command. */
-
+//parse the move s (in coordinate notation) and return the move's index in gen_dat, or -1 if the move is illegal or -2 if unknow command.
 int ParseMove(char* s) {
 	int from, to, i;
 
@@ -232,9 +172,7 @@ int ParseMove(char* s) {
 	return -1;
 }
 
-
-
-//engine move to uci move
+//Engine MOve TO Uci MOve
 char* EmoToUmo(SMove m)
 {
 	static char str[6];
@@ -298,3 +236,131 @@ void PrintBoard() {
 	printf(t);
 }
 
+
+static void ParsePosition(char* ptr){
+	int m;
+	char token[80], fen[80];
+	ptr = ParseToken(ptr, token);
+	if (strcmp(token, "fen") == 0) {
+		fen[0] = '\0';
+		for (;;) {
+			ptr = ParseToken(ptr, token);
+			if (*token == '\0' || strcmp(token, "moves") == 0)
+				break;
+			strcat(fen, token);
+			strcat(fen, " ");
+		}
+		InitBoard(fen);
+	}
+	else {
+		ptr = ParseToken(ptr, token);
+		InitBoard(DEFAULT_FEN);
+	}
+	ply = 0;
+	gen();
+	if (strcmp(token, "moves") == 0)
+		for (;;) {
+			ptr = ParseToken(ptr, token);
+			if (*token == '\0')
+				break;
+			m = ParseMove(token);
+			if (m < 0 || !makemove(gen_dat[m].m.b))
+				printf("Illegal move (%s).\n", token);
+			ply = 0;
+			gen();
+		}
+}
+
+static void ParseGo(char* ptr) {
+	info.stop = FALSE;
+	info.nodes = 0;
+	info.depthLimit = 64;
+	info.nodesLimit = 0;
+	info.timeLimit = 0;
+	info.timeStart = GetTimeMs();
+	char token[80];
+	int wtime = 0;
+	int btime = 0;
+	int winc = 0;
+	int binc = 0;
+	int movestogo = 32;
+	for (;;) {
+		ptr = ParseToken(ptr, token);
+		if (*token == '\0')
+			break;
+		else if (strcmp(token, "wtime") == 0) {
+			ptr = ParseToken(ptr, token);
+			wtime = atoi(token);
+		}
+		else if (strcmp(token, "btime") == 0) {
+			ptr = ParseToken(ptr, token);
+			btime = atoi(token);
+		}
+		else if (strcmp(token, "winc") == 0) {
+			ptr = ParseToken(ptr, token);
+			winc = atoi(token);
+		}
+		else if (strcmp(token, "binc") == 0) {
+			ptr = ParseToken(ptr, token);
+			binc = atoi(token);
+		}
+		else if (strcmp(token, "movestogo") == 0) {
+			ptr = ParseToken(ptr, token);
+			movestogo = atoi(token);
+		}
+		else if (strcmp(token, "movetime") == 0) {
+			ptr = ParseToken(ptr, token);
+			info.timeLimit = atoi(token);
+		}
+		else if (strcmp(token, "depth") == 0) {
+			ptr = ParseToken(ptr, token);
+			info.depthLimit = atoi(token);
+		}
+		else if (strcmp(token, "nodes") == 0) {
+			ptr = ParseToken(ptr, token);
+			info.nodesLimit = atoi(token);
+		}
+	}
+	int time = side ? btime : wtime;
+	int inc = side ? binc : winc;
+	if (time)
+		info.timeLimit = min(time / movestogo + inc, time / 2);
+	SearchIterate();
+}
+
+static void UciLoop() {
+	char command[4000], token[80], * ptr;
+	for (;;) {
+		ReadLine(command, sizeof(command));
+		ptr = ParseToken(command, token);
+		if (strcmp(token, "ucinewgame") == 0) {}
+		else if (strcmp(token, "uci") == 0) {
+			printf("id name %s\n",NAME);
+			printf("uciok\n");
+			fflush(stdout);
+		}
+		else if (strcmp(token, "isready") == 0) {
+			printf("readyok\n");
+			fflush(stdout);
+		}
+		else if (strcmp(token, "position") == 0) {
+			ParsePosition(ptr);
+		}
+		else if (strcmp(token, "go") == 0) {
+			ParseGo(ptr);
+		}
+		else if (strcmp(token, "quit") == 0) {
+			exit(0);
+		}
+		else if (strcmp(token, "print") == 0)
+			PrintBoard();
+	}
+}
+
+int main(){
+	printf("%s %s\n", NAME, VERSION);
+	InitHash();
+	InitBoard(DEFAULT_FEN);
+	UciLoop();
+	return 0;
+}

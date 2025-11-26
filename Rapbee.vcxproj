@@ -122,7 +122,6 @@
     <ClCompile Include="board.c" />
     <ClCompile Include="data.c" />
     <ClCompile Include="eval.c" />
-    <ClCompile Include="fen.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="search.c" />
   </ItemGroup>

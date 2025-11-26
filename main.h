@@ -1,6 +1,8 @@
 #define BOOL			int
 #define TRUE			1
 #define FALSE			0
+#define S64 signed __int64
+#define U64 unsigned __int64
 
 #define bool BOOL
 #define true TRUE
@@ -52,21 +54,8 @@
 #define MAX_SCORE 10000
 #define MAX_TIME 60000
 #define NAME "Rapbee"
-
-/* This is the basic description of a move. promote is what
-   piece to promote the pawn to, if the move is a pawn
-   promotion. bits is a bitfield that describes the move,
-   with the following bits:
-
-   1	capture
-   2	castle
-   4	en passant capture
-   8	pushing a pawn 2 squares
-   16	pawn move
-   32	promote
-
-   It's union'ed with an integer so two moves can easily
-   be compared with each other. */
+#define VERSION "2025-09-22"
+#define DEFAULT_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 typedef struct {
 	char from;
@@ -97,6 +86,17 @@ typedef struct {
 	int fifty;
 	int hash;
 } hist_t;
+
+typedef struct {
+	int stop;
+	int depthLimit;
+	S64 timeStart;
+	S64 timeLimit;
+	U64 nodes;
+	U64 nodesLimit;
+}SearchInfo;
+
+extern SearchInfo info;
 
 extern int color[64];
 extern int piece[64];
@@ -132,7 +132,7 @@ extern int castle_mask[64];
 extern char piece_char[6];
 extern int init_color[64];
 extern int init_piece[64];
-extern const char* spos;
+extern const char* defFen;
 extern const char* square_name[];
 extern const char* num;
 extern int piece_value[6];
@@ -143,8 +143,8 @@ static int x;
 /* prototypes */
 
 /* board.c */
-void init_board(const char *s);
-void init_hash();
+void InitBoard(const char *s);
+void InitHash();
 int hash_rand();
 void set_hash();
 BOOL in_check(int s);
@@ -175,16 +175,11 @@ int eval_dark_king(int sq);
 int eval_dkp(int f);
 
 /* fen.c */
-void SetFen(const char *s); // new
-void PrintFen();
-
-
+void SetFen(const char *s);
 
 /* main.c */
-int GetTimeMs();
+U64 GetTimeMs();
 int main();
 int ParseMove(char *s);
 char *EmoToUmo(SMove m);
 void PrintBoard();
-void print_result();
-void bench();

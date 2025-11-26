@@ -24,9 +24,6 @@
     <ClCompile Include="eval.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="fen.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
